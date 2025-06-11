@@ -1,8 +1,8 @@
 import httpx
 from typing import Dict, Any, Optional
-from pydantic import BaseModel
 from datetime import datetime
 import logging
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class ChurchSuiteClient:
             )
             
             if response.status_code != 200:
-                raise Exception("Failed to get access token")
+                raise Exception(f"Failed to get access token: {response.text}")
                 
             token_data = response.json()
             self.access_token = token_data["access_token"]
@@ -57,7 +57,7 @@ class ChurchSuiteClient:
 
         if response.status_code != 200:
             logger.error(f"ChurchSuite API error: {response.status_code} - {response.text}")
-            raise Exception(f"ChurchSuite API error: {response.status_code}")
+            raise Exception(f"ChurchSuite API error: {response.status_code} - {response.text}")
 
         return response.json()
 
@@ -98,6 +98,14 @@ class ChurchSuiteClient:
 
     async def get_my_profile(self, user_token: str) -> Dict:
         """Get the current user's profile"""
+        headers = {
+            "x-user-token": user_token
+        }
+        return await self.make_request(
+            "GET",
+            "people/me",
+            headers=headers
+        )
         headers = {
             "x-user-token": user_token
         }
