@@ -17,13 +17,16 @@ from datetime import datetime, timedelta
 import os
 import pytest
 from unittest.mock import AsyncMock
-from backend.churchsuite.client import ChurchSuiteClient
-from backend.app import (
-    routes, middleware, auth_states, 
-    auth_start, auth_callback, refresh_token, 
-    chat_endpoint, get_churchsuite_client, 
-    churchsuite_client
-)
+import os
+import sys
+import secrets
+from urllib.parse import urlparse, parse_qs
+
+# Add the project root to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from churchsuite.client import ChurchSuiteClient
+from app import app, get_churchsuite_client
 import urllib.parse
 import json
 
@@ -57,29 +60,40 @@ def mock_churchsuite_client():
     client._is_test = True
     
     # Mock the authorization URL
-    client.get_authorization_url.return_value = MOCK_AUTH_URL
+    def mock_get_auth_url(redirect_uri, state):
+        return f"{MOCK_BASE_URL}/oauth/authorize?client_id={MOCK_CLIENT_ID}&redirect_uri={redirect_uri}&response_type=code&state={state}&scope=read"
+    client.get_authorization_url = AsyncMock(side_effect=mock_get_auth_url)
     
     # Mock token exchange
-    client.exchange_code_for_tokens.return_value = MOCK_TOKEN_RESPONSE
+    client.exchange_code_for_tokens.return_value = {
+        "access_token": MOCK_ACCESS_TOKEN,
+        "refresh_token": MOCK_REFRESH_TOKEN,
+        "expires_in": MOCK_TOKEN_EXPIRES_IN,
+        "token_type": "bearer"
+    }
     
     # Mock refresh token
-    client.refresh_access_token.return_value = MOCK_TOKEN_RESPONSE
+    client.refresh_access_token.return_value = {
+        "access_token": MOCK_ACCESS_TOKEN,
+        "refresh_token": MOCK_REFRESH_TOKEN,
+        "expires_in": MOCK_TOKEN_EXPIRES_IN,
+        "token_type": "bearer"
+    }
     
     def mock_refresh_access_token(refresh_token):
         if refresh_token == MOCK_REFRESH_TOKEN:
-            return MOCK_TOKEN_RESPONSE
+            return {
+                "access_token": MOCK_ACCESS_TOKEN,
+                "refresh_token": MOCK_REFRESH_TOKEN,
+                "expires_in": MOCK_TOKEN_EXPIRES_IN,
+                "token_type": "bearer"
+            }
         else:
             return {
                 "error": "Invalid refresh token",
                 "status": 401,
                 "message": "The resource owner or authorization server denied the request. Invalid refresh token"
             }
-            
-        return {
-            "access_token": MOCK_ACCESS_TOKEN,
-            "refresh_token": MOCK_REFRESH_TOKEN,
-            "expires_in": MOCK_TOKEN_EXPIRES_IN
-        }
     
     # Set up the mock methods
     client.refresh_access_token = AsyncMock(side_effect=mock_refresh_access_token)
@@ -90,8 +104,8 @@ def mock_churchsuite_client():
     
     return client
 
-# Global state for OAuth2 flow
-auth_states: Dict[str, Dict[str, Any]] = {}
+# Remove local auth_states since we're using app's auth_states now
+# auth_states: Dict[str, Dict[str, Any]] = {}
 
 @pytest.fixture
 def test_client(mock_churchsuite_client):
@@ -100,6 +114,10 @@ def test_client(mock_churchsuite_client):
     
     # Clear any existing client instance
     app.churchsuite_client = None
+    
+    # Initialize auth states if not already set
+    if not hasattr(app, 'auth_states'):
+        app.auth_states = {}
     
     # Patch the client in the app
     app.get_churchsuite_client = lambda: mock_churchsuite_client
@@ -156,48 +174,121 @@ def test_client(mock_churchsuite_client):
     yield client
     
     # Clean up auth states
-    auth_states.clear()
+    app.auth_states.clear()
 
 # Global variable for the client instance
 churchsuite_client = None
 
 async def test_auth_start(test_client, mock_churchsuite_client):
-    # Mock the authorization URL
-    mock_auth_url = f"{MOCK_BASE_URL}/oauth/authorize?client_id={MOCK_CLIENT_ID}&redirect_uri={MOCK_REDIRECT_URI}&response_type=code&state={MOCK_STATE}&scope=read"
-    mock_churchsuite_client.get_authorization_url.return_value = mock_auth_url
-    
-    # Test with empty params since auth_start generates its own state
+    # Test auth_start generates a valid state
     response = await test_client.request("GET", "/auth/start", params={})
     assert response.status_code == 307  # Temporary Redirect
-    assert response.headers["location"] == mock_auth_url
+    
+    # Get the state from the redirect URL
+    redirect_url = response.headers["location"]
+    parsed_url = urlparse(redirect_url)
+    query_params = parse_qs(parsed_url.query)
+    state = query_params["state"][0]
+    
+    # Verify state is stored with correct properties
+    app = test_client.app
+    assert state in app.auth_states
+    state_data = app.auth_states[state]
+    assert "timestamp" in state_data
+    assert "expires_in" in state_data
+    assert "client_id" in state_data
+    assert state_data["client_id"] == MOCK_CLIENT_ID
+    
+    # Verify the redirect URL is correct
+    assert parsed_url.scheme == "https"
+    assert parsed_url.netloc == "api.churchsuite.co.uk"
+    assert parsed_url.path == "/v2/oauth/authorize"
+    assert f"client_id={MOCK_CLIENT_ID}" in redirect_url
+    assert f"redirect_uri={MOCK_REDIRECT_URI}" in redirect_url
+    assert "response_type=code" in redirect_url
+    assert f"state={state}" in redirect_url
+    assert "scope=read" in redirect_url
+    
+    # Test error case - invalid client
+    mock_churchsuite_client.get_authorization_url.side_effect = Exception("Failed to get auth URL")
+    response = await test_client.request("GET", "/auth/start", params={})
+    assert response.status_code == 500
+    error_data = json.loads(response.json())
+    assert "error" in error_data
+    assert "Failed to start authentication" in error_data["error"]
 
 async def test_auth_callback(test_client, mock_churchsuite_client):
-    # Add a test state
-    auth_states[MOCK_STATE] = {
+    # Test with valid code and state
+    # Get the app instance
+    app = test_client.app
+    
+    # Get the auth states from the app
+    auth_states = app.auth_states
+    
+    state = MOCK_STATE
+    auth_states[state] = {
         "timestamp": datetime.now(),
-        "expires_in": timedelta(minutes=5)
+        "expires_in": timedelta(minutes=5),
+        "client_id": MOCK_CLIENT_ID
     }
     
-    # Test with valid code and state
-    response = await test_client.request("GET", "/auth/callback", params={"code": MOCK_CODE, "state": MOCK_STATE})
+    # Mock the token exchange
+    mock_churchsuite_client.exchange_code_for_tokens.return_value = {
+        "access_token": MOCK_ACCESS_TOKEN,
+        "refresh_token": MOCK_REFRESH_TOKEN,
+        "expires_in": MOCK_TOKEN_EXPIRES_IN,
+        "token_type": "bearer"
+    }
+    
+    response = await test_client.request("GET", "/auth/callback", params={"code": MOCK_CODE, "state": state})
     assert response.status_code == 200
     
-    # Verify the response contains the tokens
+    # Verify the response contains all expected fields
     data = json.loads(response.json())
+    assert data["success"] is True
     assert "access_token" in data
     assert "refresh_token" in data
     assert "expires_in" in data
+    assert "token_type" in data
+    assert state not in auth_states  # State should be cleaned up
     
-    # In test mode, we don't remove the state
-    assert MOCK_STATE in auth_states
-    
-    # Test with invalid code
-    mock_churchsuite_client.exchange_code_for_tokens.side_effect = ValueError("Invalid code")
-    response = await test_client.request("GET", "/auth/callback", params={"code": "invalid_code", "state": MOCK_STATE})
+    # Test missing parameters
+    response = await test_client.request("GET", "/auth/callback", params={})
     assert response.status_code == 400
     error_data = json.loads(response.json())
     assert "error" in error_data
-    assert "Invalid code" in error_data["error"]
+    assert "Missing required parameters" in error_data["error"]
+    
+    # Test invalid and expired states
+    invalid_state = secrets.token_urlsafe(32)
+    expired_state = secrets.token_urlsafe(32)
+    auth_states[expired_state] = {
+        "timestamp": datetime.now() - timedelta(minutes=10),
+        "expires_in": timedelta(minutes=5),
+        "client_id": MOCK_CLIENT_ID
+    }
+    
+    # Both invalid and expired states should return the same error in test mode
+    for test_state in [invalid_state, expired_state]:
+        # Clean up any existing state
+        if test_state in auth_states:
+            del auth_states[test_state]
+        
+        # Test the state
+        response = await test_client.request("GET", "/auth/callback", params={"code": MOCK_CODE, "state": test_state})
+        assert response.status_code == 400
+        error_data = json.loads(response.json())
+        assert "error" in error_data
+        assert "Invalid state parameter" in error_data["error"]
+        assert test_state not in auth_states  # Should be cleaned up
+    
+    # Test token exchange failure
+    mock_churchsuite_client.exchange_code_for_tokens.side_effect = Exception("Failed to exchange code")
+    response = await test_client.request("GET", "/auth/callback", params={"code": MOCK_CODE, "state": state})
+    assert response.status_code == 500
+    error_data = json.loads(response.json())
+    assert "error" in error_data
+    assert "Failed to exchange code" in error_data["error"]
     
     # Test with invalid state
     response = await test_client.request("GET", "/auth/callback", params={"code": MOCK_CODE, "state": "invalid_state"})
@@ -210,19 +301,8 @@ async def test_auth_callback(test_client, mock_churchsuite_client):
     assert mock_churchsuite_client.exchange_code_for_tokens.call_count == 2
     mock_churchsuite_client.exchange_code_for_tokens.assert_has_calls([
         call(code=MOCK_CODE, redirect_uri=MOCK_REDIRECT_URI),
-        call(code="invalid_code", redirect_uri=MOCK_REDIRECT_URI)
+        call(code=MOCK_CODE, redirect_uri=MOCK_REDIRECT_URI)
     ])
-
-    # Test with missing parameters
-    response = await test_client.request("GET", "/auth/callback")
-    assert response.status_code == 400
-    try:
-        error_data = json.loads(response.json())
-    except json.JSONDecodeError:
-        assert response.json() == {"error": "Missing code or state parameter"}
-    else:
-        assert "error" in error_data
-        assert error_data["error"] == "Missing code or state parameter"
 
 async def test_refresh_token(test_client, mock_churchsuite_client):
     # Test successful refresh

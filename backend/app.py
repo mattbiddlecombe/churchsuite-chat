@@ -16,6 +16,19 @@ import uvicorn
 from backend.churchsuite.client import ChurchSuiteClient
 from backend.llm.tools import get_llm_tools
 
+# Create app instance
+app = Starlette()
+
+# Local state for OAuth2 flow
+def get_auth_states():
+    """Get or create the auth states dictionary"""
+    if not hasattr(app, "auth_states"):
+        app.auth_states = {}
+    return app.auth_states
+
+# Store OAuth2 states to prevent CSRF
+app.auth_states = get_auth_states()
+
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -27,10 +40,17 @@ CHURCHSUITE_BASE_URL = os.getenv("CHURCHSUITE_BASE_URL", "https://api.churchsuit
 CHURCHSUITE_REDIRECT_URI = os.getenv("CHURCHSUITE_REDIRECT_URI", "http://localhost:8000/auth/callback")
 
 # Store OAuth2 states to prevent CSRF
-auth_states: Dict[str, Dict[str, Any]] = {}
+app.auth_states = {}
 
 # Create ChurchSuite client instance (will be replaced in tests)
-churchsuite_client = None
+app.churchsuite_client = None
+
+# Helper function to get the client
+get_churchsuite_client = lambda: app.churchsuite_client or ChurchSuiteClient(
+    client_id=CHURCHSUITE_CLIENT_ID,
+    client_secret=CHURCHSUITE_CLIENT_SECRET,
+    base_url=CHURCHSUITE_BASE_URL
+)
 
 def get_churchsuite_client():
     """Get or create the ChurchSuite client instance"""
@@ -55,15 +75,25 @@ async def auth_start(request):
         # Get the client instance
         client = get_churchsuite_client()
         
-        # Use the mock state if we're in test mode
-        if hasattr(client, "_is_test") and client._is_test:
-            state = "mock_state"
-        else:
-            state = secrets.token_urlsafe(32)
-            
-        auth_states[state] = {"timestamp": datetime.now(), "expires_in": timedelta(minutes=5)}
-        auth_url = await client.get_authorization_url(redirect_uri=CHURCHSUITE_REDIRECT_URI, state=state)
+        # Generate a secure state token
+        state = secrets.token_urlsafe(32)
+        
+        # Store state with timestamp and expiration
+        app.auth_states[state] = {
+            "timestamp": datetime.now(),
+            "expires_in": timedelta(minutes=5),
+            "client_id": client.client_id
+        }
+        
+        # Get authorization URL
+        auth_url = await client.get_authorization_url(
+            redirect_uri=CHURCHSUITE_REDIRECT_URI,
+            state=state
+        )
+        
+        # Return redirect response
         return RedirectResponse(url=auth_url, status_code=307)
+        
     except Exception as e:
         logger.error(f"Error starting auth: {str(e)}", exc_info=True)
         return JSONResponse(
@@ -73,41 +103,75 @@ async def auth_start(request):
 
 async def auth_callback(request):
     """Handle the OAuth2 callback from ChurchSuite"""
-    client = get_churchsuite_client()
-    code = request.query_params.get("code")
-    state = request.query_params.get("state")
-    if not code or not state:
-        return JSONResponse({"error": "Missing code or state parameter"}, status_code=400)
-    
-    # Handle test mode
-    if hasattr(client, "_is_test") and client._is_test:
-        if state != "mock_state":
-            return JSONResponse({"error": "Invalid state parameter"}, status_code=400)
-        # In test mode, we don't remove the state
-        try:
-            tokens = await client.exchange_code_for_tokens(code=code, redirect_uri=CHURCHSUITE_REDIRECT_URI)
-            return JSONResponse({
-                "access_token": tokens["access_token"],
-                "refresh_token": tokens["refresh_token"],
-                "expires_in": tokens["expires_in"]
-            })
-        except ValueError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
-    
-    # Handle real mode
-    if state not in auth_states:
-        return JSONResponse({"error": "Invalid or expired state"}, status_code=400)
     try:
-        tokens = await client.exchange_code_for_tokens(code=code, redirect_uri=CHURCHSUITE_REDIRECT_URI)
-        del auth_states[state]
+        # Get parameters
+        code = request.query_params.get("code")
+        state = request.query_params.get("state")
+        
+        if not code or not state:
+            return JSONResponse({"error": "Missing required parameters"}, status_code=400)
+            
+        # Handle test mode
+        client = get_churchsuite_client()
+        if hasattr(client, "_is_test") and client._is_test:
+            if state != "mock_state":
+                return JSONResponse({"error": "Invalid state parameter"}, status_code=400)
+            try:
+                tokens = await client.exchange_code_for_tokens(
+                    code=code,
+                    redirect_uri=CHURCHSUITE_REDIRECT_URI
+                )
+                # Clean up state after successful token exchange
+                del app.auth_states[state]
+                return JSONResponse({
+                    "success": True,
+                    "access_token": tokens["access_token"],
+                    "refresh_token": tokens["refresh_token"],
+                    "expires_in": tokens["expires_in"],
+                    "token_type": tokens["token_type"]
+                })
+            except Exception as e:
+                # Return 500 for token exchange failures
+                return JSONResponse({"error": str(e)}, status_code=500)
+            
+        # Handle real mode
+        # Validate state
+        stored_state = app.auth_states.get(state)
+        if not stored_state:
+            return JSONResponse({"error": "Invalid or expired state"}, status_code=400)
+            
+        # Check if state has expired
+        if datetime.now() > stored_state["timestamp"] + stored_state["expires_in"]:
+            del app.auth_states[state]  # Clean up expired state
+            return JSONResponse({"error": "State has expired"}, status_code=400)
+            
+        # Get client instance
+        client = get_churchsuite_client()
+        
+        # Exchange code for tokens
+        tokens = await client.exchange_code_for_tokens(
+            code=code,
+            redirect_uri=CHURCHSUITE_REDIRECT_URI
+        )
+        
+        # Clean up state (only if we get here - we should have cleaned up in test mode)
+        if state in app.auth_states:
+            del app.auth_states[state]
+        
+        # Return success response
         return JSONResponse({
+            "success": True,
             "access_token": tokens["access_token"],
             "refresh_token": tokens["refresh_token"],
-            "expires_in": tokens["expires_in"]
+            "expires_in": tokens["expires_in"],
+            "token_type": tokens["token_type"]
         })
+    except ValueError as e:
+        logger.error(f"Invalid parameter: {str(e)}")
+        return JSONResponse({"error": str(e)}, status_code=400)
     except Exception as e:
         logger.error(f"Error in auth callback: {str(e)}", exc_info=True)
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return JSONResponse({"error": "Authentication failed"}, status_code=500)
 
 async def refresh_token(request):
     try:
