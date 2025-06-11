@@ -2,7 +2,24 @@
 
 ## Document Information
 - **Last Updated:** 11 Jun 2025
-- **Version:** v0 draft
+- **Version:** v0.1 draft
+
+## Progress Update (11 Jun 2025)
+
+### Current Status
+- **Backend:**
+  - Switched from FastAPI to Starlette due to Python 3.13 compatibility
+  - Basic server structure implemented
+  - OpenAI integration with GPT-3.5-turbo working
+  - Basic chat endpoint operational
+  - Logging infrastructure setup
+  - GitHub repository established at https://github.com/mattbiddlecombe/churchsuite-chat
+
+- **Tech Stack Changes:**
+  - Backend: Starlette (Python 3.13)
+  - OpenAI: GPT-3.5-turbo (version 0.27.8 for compatibility)
+  - HTTP Client: HTTPX
+  - Testing: Pytest with async support
 
 ## 1. Purpose & Vision
 
