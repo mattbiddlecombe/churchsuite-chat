@@ -2,8 +2,8 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any
 import uvicorn
-from churchsuite.client import ChurchSuiteClient
-from llm.tools import get_llm_tools
+from backend.churchsuite.client import ChurchSuiteClient
+from backend.llm.tools import get_llm_tools
 
 app = FastAPI(title="ChurchSuite Chatbot API")
 
