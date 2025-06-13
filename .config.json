@@ -1,0 +1,28 @@
+{
+    "mcp": {
+        "active": true,
+        "providers": [
+            {
+                "name": "context7",
+                "type": "context",
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@upstash/context7-mcp"
+                ]
+            },
+            "vault"
+        ],
+        "files": [
+            "README.md",
+            "PLANNING.md",
+            "TASK.md",
+            "GLOBAL_RULES.md",
+            "DECISIONS.md"
+        ]
+    },
+    "github": {
+        "repo": "mattbiddlecombe/churchsuite-chat",
+        "branch": "main"
+    }
+}

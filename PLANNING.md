@@ -19,24 +19,22 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
 
 - **Backend:**
 
-  - Starlette (Python 3.13) server fully implemented
+  - Starlette (Python 3.13) server implemented
   - OpenAI integration with GPT-3.5-turbo complete
   - Basic chat endpoint with function calling operational
-  - Comprehensive logging and audit trails established
+  - Logging infrastructure established
   - GitHub repository active at https://github.com/mattbiddlecombe/churchsuite-chat
   - Function calling with OpenAI integrated
-  - ChurchSuite API endpoints integrated
-  - Error handling and request validation implemented
-  - Comprehensive test suite for authentication and ChurchSuite client integration
-    - Authentication tests (test_auth.py)
-    - ChurchSuite client tests (test_churchsuite_client.py)
-    - All tests passing with 100% coverage
+  - **Regression:** Schema structure split causing import issues
+  - **Regression:** Middleware implementation issues
+  - **Regression:** Authentication system needs reimplementation
+  - **Regression:** Test coverage needs restoration
 
 - **Tech Stack:**
   - Backend: Starlette (Python 3.13)
   - OpenAI: GPT-3.5-turbo
   - HTTP Client: HTTPX
-  - Testing: Pytest with async support
+  - Testing: Pytest with async support (Regression: Test coverage issues)
   - Logging: Structured logging with audit trails
   - Database: Optional vector store (Qdrant)
 
@@ -62,7 +60,9 @@ All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete
 ## 3. Tech Stack
 
 - Frontend: Next.js 14 + React Server Components + shadcn/ui chat widget (SSR, streamed)
-- Gateway API: FastAPI running behind ASGI (uvicorn), handles auth, rate-limiting, logging
+- Gateway API: FastAPI (built on Starlette) running behind ASGI (uvicorn)
+  - Handles auth, rate-limiting, logging
+  - Standardized on FastAPI for consistent testing and middleware
 - LLM provider: OpenAI GPT-4o (function-calling) via Azure OpenAI
 - Vector store (optional): Qdrant (Docker) with per-user namespaces
 - CI/CD: GitHub Actions; Docker image pushed to GHCR; deployed on Railway
