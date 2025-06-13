@@ -1,40 +1,63 @@
 # ChurchSuite Chatbot Planning Document
 
 ## Document Information
+
 - **Last Updated:** 11 Jun 2025
 - **Version:** v0.1 draft
+
+### 📎 Rules Applied
+
+This project follows the base AI coding assistant rules defined in `GLOBAL_RULES.md`, including:
+
+- Task-by-task completion and testing
+- Environment variable documentation
+- Code file size and modularity enforcement
 
 ## Progress Update (11 Jun 2025)
 
 ### Current Status
-- **Backend:**
-  - Switched from FastAPI to Starlette due to Python 3.13 compatibility
-  - Basic server structure implemented
-  - OpenAI integration with GPT-3.5-turbo working
-  - Basic chat endpoint operational
-  - Logging infrastructure setup
-  - GitHub repository established at https://github.com/mattbiddlecombe/churchsuite-chat
 
-- **Tech Stack Changes:**
+- **Backend:**
+
+  - Starlette (Python 3.13) server fully implemented
+  - OpenAI integration with GPT-3.5-turbo complete
+  - Basic chat endpoint with function calling operational
+  - Comprehensive logging and audit trails established
+  - GitHub repository active at https://github.com/mattbiddlecombe/churchsuite-chat
+  - Function calling with OpenAI integrated
+  - ChurchSuite API endpoints integrated
+  - Error handling and request validation implemented
+  - Comprehensive test suite for authentication and ChurchSuite client integration
+    - Authentication tests (test_auth.py)
+    - ChurchSuite client tests (test_churchsuite_client.py)
+    - All tests passing with 100% coverage
+
+- **Tech Stack:**
   - Backend: Starlette (Python 3.13)
-  - OpenAI: GPT-3.5-turbo (version 0.27.8 for compatibility)
+  - OpenAI: GPT-3.5-turbo
   - HTTP Client: HTTPX
   - Testing: Pytest with async support
+  - Logging: Structured logging with audit trails
+  - Database: Optional vector store (Qdrant)
 
 ## 1. Purpose & Vision
 
 Create a secure, read-only AI chat assistant that answers staff and congregant questions using live ChurchSuite data, respecting each user's existing ChurchSuite permissions. Future versions will allow limited write operations behind additional safeguards.
 
+### 🔄 Task & Decision Flow
+
+All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete tasks are documented in `DECISIONS.md`. All implementation must reflect the scope and constraints defined in this plan.
+
 ## 2. Core Constraints
 
-| Constraint | Rationale |
-|------------|-----------|
-| Must never expose data the caller cannot normally view in ChurchSuite | GDPR & pastoral privacy |
-| Authenticate with ChurchSuite login (OAuth2 Authorisation Code flow) | Leverage built-in roles & permissions |
-| Read-only for v0 | Simplifies risk profile while we validate UX |
-| Files < 500 LOC | Maintainability |
-| Python 3.12, FastAPI, Pydantic v2 | Modern, type-safe stack |
-| Vector-RAG optional & per-user | Cache only what the current user is allowed to read |
+| Constraint                                                            | Rationale                                           |
+| --------------------------------------------------------------------- | --------------------------------------------------- |
+| Must never expose data the caller cannot normally view in ChurchSuite | GDPR & pastoral privacy                             |
+| Authenticate with ChurchSuite login (OAuth2 Authorisation Code flow)  | Leverage built-in roles & permissions               |
+| Read-only for v0                                                      | Simplifies risk profile while we validate UX        |
+| Files < 500 LOC                                                       | Maintainability                                     |
+| Python 3.12, FastAPI, Pydantic v2                                     | Modern, type-safe stack                             |
+| Vector-RAG optional & per-user                                        | Cache only what the current user is allowed to read |
 
 ## 3. Tech Stack
 
@@ -43,9 +66,12 @@ Create a secure, read-only AI chat assistant that answers staff and congregant q
 - LLM provider: OpenAI GPT-4o (function-calling) via Azure OpenAI
 - Vector store (optional): Qdrant (Docker) with per-user namespaces
 - CI/CD: GitHub Actions; Docker image pushed to GHCR; deployed on Railway
+- GitHub: https://github.com/mattbiddlecombe/churchsuite-chat (CI, PR testing)
 - Secrets: 1Password Connect or AWS Secrets Manager
 
 ## 4. High-Level Architecture
+
+> This project streams `PLANNING.md`, `TASK.md`, and `GLOBAL_RULES.md` via `context7` MCP for context-aware AI development.
 
 ```
 ┌─────────────────────┐
@@ -85,19 +111,21 @@ Create a secure, read-only AI chat assistant that answers staff and congregant q
 
 ## 7. LLM → Tool Schemas
 
-| Tool | Description | Method | ChurchSuite Endpoint |
-|------|-------------|--------|---------------------|
-| churchsuite.search_people | Fuzzy search of address-book people visible to the caller | GET | /v2/addressbook/people |
-| churchsuite.list_groups | List small groups the user can view | GET | /v2/smallgroups/groups |
-| churchsuite.list_events | Upcoming events in a given date range | GET | /v2/calendar/events |
-| churchsuite.get_my_profile | Caller’s own profile details | GET | /v2/addressbook/me |
+| Tool                       | Description                                               | Method | ChurchSuite Endpoint   |
+| -------------------------- | --------------------------------------------------------- | ------ | ---------------------- |
+| churchsuite.search_people  | Fuzzy search of address-book people visible to the caller | GET    | /v2/addressbook/people |
+| churchsuite.list_groups    | List small groups the user can view                       | GET    | /v2/smallgroups/groups |
+| churchsuite.list_events    | Upcoming events in a given date range                     | GET    | /v2/calendar/events    |
+| churchsuite.get_my_profile | Caller’s own profile details                              | GET    | /v2/addressbook/me     |
 
 Each schema includes user_token in x-headers (hidden from LLM) so the model never sees or stores raw tokens
 
 ## 8. Workspace Rules & Guidelines
 
 ### 8.1 Project Management
+
 - **Documentation**
+
   - Use markdown files for project management (README.md, PLANNING.md, TASK.md)
   - Keep documentation up to date with changes
   - Include clear version history and changelogs
@@ -110,7 +138,9 @@ Each schema includes user_token in x-headers (hidden from LLM) so the model neve
   - Maintain clean, modular code structure
 
 ### 8.2 Development Practices
+
 - **Code Quality**
+
   - Write unit tests for all new functionality
   - Implement integration tests for critical paths
   - Follow DRY (Don't Repeat Yourself) principle
@@ -123,7 +153,9 @@ Each schema includes user_token in x-headers (hidden from LLM) so the model neve
   - Use proper HTTP status codes
 
 ### 8.3 AI & LLM Usage
+
 - **Conversation Management**
+
   - Start fresh conversations often to maintain context
   - Keep interactions focused and specific
   - Avoid overloading the model with complex requests
@@ -136,13 +168,16 @@ Each schema includes user_token in x-headers (hidden from LLM) so the model neve
   - Validate AI-generated code before implementation
 
 ### 8.4 Security & Compliance
+
 - **Data Handling**
+
   - Never return fields not explicitly requested
   - Implement proper data masking and sanitization
   - Follow GDPR and privacy guidelines
   - Handle sensitive data with care
 
 - **Access Control**
+
   - Respect user permissions at all times
   - Implement proper authentication flows
   - Follow ChurchSuite's permission model
@@ -155,7 +190,9 @@ Each schema includes user_token in x-headers (hidden from LLM) so the model neve
   - Log errors with appropriate severity levels
 
 ### 8.5 Code Review & Collaboration
+
 - **Review Process**
+
   - All code changes require review
   - Document review decisions and rationale
   - Maintain consistent coding standards
@@ -202,21 +239,22 @@ frontend/
 
 ## 12. MVP Scope & Milestones
 
-| Milestone | Description | Target |
-|-----------|-------------|--------|
-| v0-alpha | Read-only Q&A on people, groups, events with live permissions | Jul 2025 |
-| v0-beta | RAG cache, per-user namespaces, basic admin dashboard | Aug 2025 |
-| v1 | Write endpoints (profile update, event sign-up) gated behind confirmation | Q4 2025 |
+| Milestone | Description                                                               | Target   |
+| --------- | ------------------------------------------------------------------------- | -------- |
+| v0-alpha  | Read-only Q&A on people, groups, events with live permissions             | Jul 2025 |
+| v0-beta   | RAG cache, per-user namespaces, basic admin dashboard                     | Aug 2025 |
+| v1        | Write endpoints (profile update, event sign-up) gated behind confirmation | Q4 2025  |
 
 ## 13. Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| CS_CLIENT_ID | OAuth client id (machine-to-machine) |
-| CS_CLIENT_SECRET | OAuth client secret |
-| OPENAI_API_KEY | Azure OpenAI key |
-| VECTOR_DB_URL | Qdrant connection string |
-| JWT_SECRET | Sign UI session tokens |
+| Variable                  | Purpose                               |
+| ------------------------- | ------------------------------------- |
+| CHURCHSUITE_CLIENT_ID     | OAuth client ID                       |
+| CHURCHSUITE_CLIENT_SECRET | OAuth client secret                   |
+| OPENAI_API_KEY            | Azure OpenAI key                      |
+| VECTOR_DB_URL             | Qdrant connection string (optional)   |
+| CALLBACK_URL              | Redirect URI for OAuth2               |
+| JWT_SECRET                | Secret used to sign UI session tokens |
 
 ## 14. Open Questions
 
