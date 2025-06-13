@@ -15,9 +15,9 @@
 - [x] Set up GitHub repository
 - [x] Update documentation
 - [x] Implement function calling with OpenAI
-- [x] Integrate ChurchSuite API endpoints
-- [x] Add proper error handling
-- [x] Implement request validation
+- [ ] Integrate ChurchSuite API endpoints (Regression: Schema structure split causing import issues)
+- [ ] Add proper error handling (Regression: Middleware using incorrect response format)
+- [ ] Implement request validation (Regression: Middleware implementation issues)
 
 ## Task Discipline Policy
 
@@ -28,26 +28,29 @@
 
 ## Current Tasks
 
-- [x] Add ChurchSuite OAuth2 authentication
-  - Implemented OAuth2 flow with ChurchSuite
-  - Added comprehensive unit tests for authentication endpoints
-  - Added session management and token validation
-  - Added error handling for invalid client configurations
-  - Created test_auth.py with passing authentication tests
-- [x] Add rate limiting
-  - Implemented in-memory rate limiting with 60 requests per minute
-  - Added test endpoint and unit tests
-  - Configurable rate limits and window sizes
-  - Skips auth endpoints
-- [x] Set up CI/CD pipeline
-- GitHub Actions workflow for main/master branches
-- Automated testing with coverage
-- Linting with pylint
-- Code coverage reporting to Codecov
-- Deployment to Railway
-- Enforce that all merged PRs must include passing tests for the task implemented
+- [ ] Add ChurchSuite OAuth2 authentication (Regression: Auth files deleted)
+  - [ ] Reimplement OAuth2 flow with ChurchSuite
+  - [ ] Add comprehensive unit tests for authentication endpoints
+  - [ ] Add session management and token validation
+  - [ ] Add error handling for invalid client configurations
+  - [ ] Create test_auth.py with passing authentication tests
+- [ ] Add rate limiting (Regression: Middleware implementation issues)
+  - [ ] Fix middleware to use proper ASGI response format
+  - [ ] Add test endpoint and unit tests
+  - [ ] Configurable rate limits and window sizes
+  - [ ] Skips auth endpoints
+- [ ] Set up CI/CD pipeline (Regression: Test coverage issues)
+  - [ ] GitHub Actions workflow for main/master branches
+  - [ ] Automated testing with coverage
+  - [ ] Linting with pylint
+  - [ ] Code coverage reporting to Codecov
+  - [ ] Deployment to Railway
+  - [ ] Enforce that all merged PRs must include passing tests for the task implemented
 - [ ] Implement security measures
   - [ ] Add JWT token validation middleware
+  - [ ] Fix middleware to use proper ASGI interface
+  - [ ] Add proper security headers
+  - [ ] Add CSRF protection
   - [ ] Implement request validation schemas
   - [ ] Add input sanitization for all endpoints
   - [ ] Implement CORS policy configuration
@@ -96,9 +99,14 @@
 - [ ] Frontend UI
 
   - [ ] Set up Next.js project
+  - [x] Fix JWT middleware and tests
+  - [x] Fix token validation
+  - [x] Fix error handling
+  - [x] Fix security headers
+  - [x] Fix auth endpoint bypass
+  - [x] Fix test cases
   - [ ] Implement chat interface
   - [ ] Add authentication UI
-  - [ ] Add error handling
   - [ ] Add loading states
 
 - [ ] Deployment
