@@ -31,6 +31,11 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - **Resolved:** Authentication system reimplementation
   - **Resolved:** Test coverage restoration
   - **Resolved:** Audit logging implementation issues
+  - **Resolved:** Rate limit middleware implementation issues
+  - Fixed test isolation by changing fixture scope to "function"
+  - Implemented proper state cleanup between tests
+  - Fixed rate limit check timing to be after request processing
+  - Improved window reset logic
 
 ### Recent Milestones
 

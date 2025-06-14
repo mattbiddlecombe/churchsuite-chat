@@ -48,6 +48,36 @@ Example format:
     - Pagination
     - Authentication
     - Permission denied error handling
+
+## 2025-06-14: Rate Limit Middleware Implementation
+- **Date:** 2025-06-14
+- **Task:** Implement rate limiting middleware
+- **Deviation:** Multiple iterations to fix rate limit timing and test isolation
+- **Justification:** Initial implementations failed due to:
+  - Shared state between tests causing interference
+  - Incorrect timing of rate limit checks
+  - Improper window reset handling
+- **Solution:**
+  - Changed test fixture scope from "module" to "function" for proper isolation
+  - Added proper cleanup of rate limit state between tests
+  - Fixed rate limit check timing to be after request processing
+  - Improved window reset logic
+- **Current Status:** All tests passing
+- **Next Steps:**
+  - None - task complete
+- **Follow-up:**
+  - Monitor rate limiting behavior in production
+  - Consider adding more comprehensive rate limit testing
+- **Additional Notes:**
+  - Key changes:
+    - Test isolation through function-scoped fixtures
+    - Proper state cleanup between tests
+    - Correct timing of rate limit checks
+    - Improved window reset logic
+  - Lessons learned:
+    - Test isolation is crucial for middleware testing
+    - Rate limit timing must be carefully managed
+    - Window reset logic needs proper handling of state
     - Internal error handling
 
 ## 2025-06-14: FastAPI Migration Cleanup

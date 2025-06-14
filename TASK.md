@@ -32,6 +32,10 @@
 - [x] Set up proper testing infrastructure
 - [x] Migrate authentication endpoints
 - [x] Migrate rate limiting
+  - Fixed test isolation by changing fixture scope to "function"
+  - Implemented proper state cleanup between tests
+  - Fixed rate limit check timing to be after request processing
+  - Improved window reset logic
 - [x] Migrate security middleware
 - [x] Update endpoint schemas
 - [x] Add JWT token validation middleware
@@ -41,7 +45,6 @@
 - [x] Add input sanitization for all endpoints
 - [x] Implement CORS policy configuration
 - [x] Add security headers
-- [x] Implement rate limiting per user
 - [x] Add secure cookie handling
 - [x] Validate `.env.example` consistency
 - [x] Add comprehensive audit logging
