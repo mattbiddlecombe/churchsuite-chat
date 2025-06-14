@@ -11,11 +11,12 @@ A secure AI chat assistant that integrates with ChurchSuite to provide read-only
 - Optional vector store caching for improved performance
 - Built with FastAPI for modern, high-performance API development
 - Pure FastAPI-native JWT authentication
-- Comprehensive security headers
-- CSRF protection
+- Comprehensive security headers (including Cache-Control, Pragma, and Expires)
+- CSRF protection with token validation
 - Rate limiting per user
 - Token blacklist for logout functionality
 - Comprehensive audit logging
+- Secure cookie handling with proper attributes (HttpOnly, Secure, SameSite=Lax)
 
 ## Prerequisites
 
@@ -45,6 +46,23 @@ uvicorn backend.main:app --reload
 ```bash
 pytest tests/ -v
 ```
+
+## Security Features
+
+The application implements several security measures:
+
+- **Authentication:** Pure FastAPI-native JWT authentication
+- **CSRF Protection:** Token-based CSRF protection with secure cookie handling
+- **Security Headers:** Comprehensive security headers including:
+  - Content Security Policy
+  - XSS Protection
+  - Frame Options
+  - Strict Transport Security
+  - Cache Control
+  - CORS Headers
+- **Rate Limiting:** Per-user rate limiting to prevent abuse
+- **Audit Logging:** Comprehensive logging of all security-relevant events
+- **Secure Cookies:** Cookies are marked as HttpOnly, Secure, and use SameSite=Lax protection
 
 ## Project Structure
 

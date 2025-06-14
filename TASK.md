@@ -37,6 +37,11 @@
   - Fixed rate limit check timing to be after request processing
   - Improved window reset logic
 - [x] Migrate security middleware
+  - Migrated from Starlette to FastAPI-native middleware
+  - Added Cache-Control, Pragma, and Expires headers
+  - Fixed cookie attribute validation to be case-insensitive
+  - Implemented proper CSRF token validation
+  - Added comprehensive test coverage
 - [x] Update endpoint schemas
 - [x] Add JWT token validation middleware
 - [x] Add proper security headers

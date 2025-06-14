@@ -6,9 +6,11 @@ from backend.routers import churchsuite, chat
 from backend.security.jwt_middleware import get_current_user
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-from backend.security.middleware import InputValidationMiddleware, RateLimitMiddleware
+from backend.security.security_headers import add_security_headers
+from backend.security.csrf import add_csrf_protection
 import uvicorn
 import secrets
+
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
@@ -17,25 +19,28 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Configure FastAPI middleware
-from backend.security.fastapi_middleware import setup_fastapi_middleware
-setup_fastapi_middleware(app)
-
+# Add CORS middleware first
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_headers=["Authorization", "X-CSRF-Token", "Content-Type"],
+    expose_headers=["X-CSRF-Token"],
     max_age=600
 )
 
-# Add input validation and rate limiting middleware
-# Add FastAPI middleware
-from backend.security.middleware import InputValidationMiddleware, RateLimitMiddleware
-app.add_middleware(InputValidationMiddleware)
-app.add_middleware(RateLimitMiddleware)
+# Add security headers
+add_security_headers(app)
+
+# Add CSRF protection
+add_csrf_protection(app)
+
+# Routers
+from backend.test_routes import router as test_router
+
+# Test routes for security testing
+app.include_router(test_router)
 
 # Routers
 app.include_router(churchsuite.router, prefix="/auth")
