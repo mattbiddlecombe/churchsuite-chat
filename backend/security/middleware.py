@@ -53,11 +53,14 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Headers: {dict(request.headers)}")
             logger.debug(f"Query params: {dict(request.query_params)}")
 
-            # First check session
-            session = request.session
+            # Initialize session if not present
+            session = request.scope.get('session', {})
             user_id = session.get('user_id')
             
-            if not user_id:
+            # Skip authentication check for auth endpoints
+            if request.url.path.startswith('/auth/'):
+                pass
+            elif not user_id:
                 # If this is a chat endpoint, return 401 with error message
                 if request.url.path == '/chat':
                     return JSONResponse(

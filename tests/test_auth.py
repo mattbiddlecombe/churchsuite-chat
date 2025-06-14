@@ -1,39 +1,60 @@
 import pytest
-from httpx import AsyncClient
-from backend.schemas.requests import AuthRequest
+from fastapi.testclient import TestClient
+from backend.app import app
+from backend.routers.churchsuite import auth_states
+from backend.config import settings
+from datetime import datetime, timedelta
 
-@pytest.mark.asyncio
-async def test_auth_start(async_client):
-    """Test the auth start endpoint"""
-    response = await async_client.get('/auth/start')
-    assert response.status_code == 200
-    assert response.headers['content-type'] == 'application/json'
-    data = response.json()
-    assert 'authorization_url' in data
-    assert 'state' in data
+@pytest.fixture(scope="function")
+def test_client():
+    """Test client fixture"""
+    return TestClient(app)
 
-@pytest.mark.asyncio
-async def test_auth_callback_success(async_client):
-    """Test successful auth callback"""
-    response = await async_client.get(
-        '/auth/callback',
-        params={'code': 'test_code', 'state': 'test_state'}
-    )
-    assert response.status_code == 200
-    assert response.headers['content-type'] == 'application/json'
-    data = response.json()
-    assert 'access_token' in data
-    assert 'refresh_token' in data
+# Helper to set up test session
+@pytest.fixture(scope="function")
+def mock_session():
+    """Helper fixture to set up a test session with mock token"""
+    client = TestClient(app)
+    # Initialize session in request scope
+    client.cookies["session"] = "eyJjaXJjaHN1aXRlX3Rva2VuIjp7ImFjY2Vzc190b2tlbiI6InRlc3QtYWNjZXNzLXRva2VuIiwicmVmcmVzaF90b2tlbiI6InRlc3QtcmVmcmVzaC10b2tlbiIsImV4cGlyZXNfYXQiOjE3MjI2NjQwMjB9fQ=="
+    return client
 
-@pytest.mark.asyncio
-async def test_auth_callback_error(async_client):
-    """Test auth callback with error"""
-    response = await async_client.get(
-        '/auth/callback',
-        params={'error': 'access_denied'}
-    )
-    assert response.status_code == 400
-    assert response.headers['content-type'] == 'application/json'
-    data = response.json()
-    assert 'error' in data
-    assert 'detail' in data
+def test_auth_start(test_client):
+    # Test OAuth2 start endpoint
+    with test_client:
+        response = test_client.get("/start")
+        assert response.status_code == 307  # Redirect
+        assert response.headers["location"].startswith("https://api.churchsuite.co.uk/v2/oauth2/authorize")
+
+def test_auth_callback(test_client):
+    # Test OAuth2 callback endpoint with valid code
+    state = "test-state"
+    code = "test-code"
+    
+    # Store state in auth_states
+    auth_states[state] = datetime.now()
+    
+    with test_client:
+        response = test_client.get(
+            "/callback",
+            params={"code": code, "state": state}
+        )
+        assert response.status_code == 307  # Redirect
+        assert response.headers["location"] == "/"
+
+def test_auth_callback_invalid_state(test_client):
+    # Test OAuth2 callback with invalid state
+    with test_client:
+        response = test_client.get(
+            "/callback",
+            params={"code": "test-code", "state": "invalid-state"}
+        )
+        assert response.status_code == 400
+        assert "Invalid state" in response.json()["detail"]
+
+def test_auth_refresh(mock_session):
+    # Test token refresh endpoint with mock session
+    with mock_session:
+        response = mock_session.get("/refresh")
+        assert response.status_code == 200
+    assert "access_token" in response.json()

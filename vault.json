@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "project": {
+    "name": "ChurchSuite Chatbot",
+    "description": "Secure AI chat assistant for ChurchSuite integration",
+    "framework": "FastAPI",
+    "python_version": "3.13"
+  },
+  "architecture": {
+    "backend": {
+      "framework": "FastAPI",
+      "database": "Optional Qdrant",
+      "security": {
+        "authentication": "ChurchSuite OAuth2",
+        "authorization": "Permission-based"
+      }
+    },
+    "frontend": {
+      "framework": "Next.js",
+      "components": ["chat interface", "authentication"]
+    }
+  },
+  "key_files": {
+    "planning": "PLANNING.md",
+    "tasks": "TASK.md",
+    "rules": "GLOBAL_RULES.md",
+    "decisions": "DECISIONS.md",
+    "readme": "README.md"
+  },
+  "environment": {
+    "development": {
+      "framework": "FastAPI",
+      "database": "Qdrant (optional)",
+      "testing": "Pytest with async support"
+    },
+    "production": {
+      "framework": "FastAPI",
+      "database": "Qdrant (optional)",
+      "deployment": "Railway"
+    }
+  }
+}

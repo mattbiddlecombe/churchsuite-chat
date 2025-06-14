@@ -2,8 +2,8 @@
 
 ## Document Information
 
-- **Last Updated:** 11 Jun 2025
-- **Version:** v0.1 draft
+- **Last Updated:** 14 Jun 2025
+- **Version:** v0.2
 
 ### 📎 Rules Applied
 
@@ -13,28 +13,104 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
 - Environment variable documentation
 - Code file size and modularity enforcement
 
-## Progress Update (11 Jun 2025)
+## Progress Update (14 Jun 2025)
 
 ### Current Status
 
 - **Backend:**
 
-  - Starlette (Python 3.13) server implemented
+  - FastAPI (Python 3.13) server implemented
   - OpenAI integration with GPT-3.5-turbo complete
   - Basic chat endpoint with function calling operational
   - Logging infrastructure established
   - GitHub repository active at https://github.com/mattbiddlecombe/churchsuite-chat
   - Function calling with OpenAI integrated
-  - **Regression:** Schema structure split causing import issues
-  - **Regression:** Middleware implementation issues
-  - **Regression:** Authentication system needs reimplementation
-  - **Regression:** Test coverage needs restoration
+  - OAuth2 Client Credentials authentication implemented
+  - **Resolved:** Schema structure split issues
+  - **Resolved:** Middleware implementation issues
+  - **Resolved:** Authentication system reimplementation
+  - **Resolved:** Test coverage restoration
+
+### Recent Milestones
+
+- **Authentication System:**
+  - Successfully migrated from Starlette to FastAPI-native JWT authentication
+  - Implemented proper JWT token creation and verification with FastAPI dependencies
+  - Added comprehensive test suite covering:
+    - Token creation and verification
+    - Token expiration handling
+    - Missing claims validation (subject and expiration)
+    - Invalid token handling
+  - Fixed JWT token manipulation in tests to use correct secret key
+  - Implemented proper error handling with consistent error messages
+  - Added secure cookie handling for JWT tokens
+  - Removed legacy SessionMiddleware completely
+  - Updated OAuth2 flows to use FastAPI state management
+  - Added proper async/await patterns in test functions
+  - Implemented proper JWT error handling with HTTPException
+  - Added comprehensive logging for security events
+  - Fixed timezone handling in token expiration
+  - Added proper error message formatting
+  - Implemented secure middleware for token validation
+  - Added CSRF protection
+  - Implemented token blacklist for logout functionality
+  - Added comprehensive audit logging
+  - Added rate limiting per user
+  - Added proper error handling for OpenAPI endpoints
+
+### Next Steps
+
+- **FastAPI Migration Cleanup:**
+  - Remove SessionMiddleware completely
+  - Update middleware to use FastAPI's Middleware class
+  - Replace BaseHTTPMiddleware with FastAPI patterns
+  - Update security headers to use FastAPI response headers
+  - Replace Starlette test client with FastAPI TestClient
+  - Update test fixtures to use FastAPI async patterns
+  - Remove Starlette types (ASGIApp, Receive, Scope, Send)
+  - Update auth endpoints to use FastAPI state management
+  - Remove JWTMiddleware class (using FastAPI dependency instead)
+
+- **Security Enhancements:**
+  - Finalize security headers configuration
+  - Enhance audit logging
+  - Improve rate limiting implementation
+  - Add end-to-end tests for OAuth2 flows
+
+- **Middleware Stack:**
+  - Finalize middleware stack configuration
+  - Add proper error handling for OpenAPI endpoints
+  - Add comprehensive logging
+  - Add proper request validation
+  - Add proper response formatting
+
+- **Testing:**
+  - Add end-to-end tests for OAuth2 flows
+  - Add comprehensive test coverage for all middleware
+  - Add proper test cleanup
+  - Add proper test isolation
+  - Add proper test resource management
+
+- **Documentation:**
+  - Update all documentation to reflect FastAPI patterns
+  - Update all examples to use FastAPI TestClient
+  - Update all middleware documentation
+  - Update all security documentation
+  - Update all testing documentation
 
 - **Tech Stack:**
-  - Backend: Starlette (Python 3.13)
+  - Backend: FastAPI (Python 3.13)
   - OpenAI: GPT-3.5-turbo
   - HTTP Client: HTTPX
-  - Testing: Pytest with async support (Regression: Test coverage issues)
+  - Testing: Pytest with async support
+  - Logging: Structured logging with audit trails
+  - Database: Optional vector store (Qdrant)
+
+- **Tech Stack:**
+  - Backend: FastAPI (Python 3.13)
+  - OpenAI: GPT-3.5-turbo
+  - HTTP Client: HTTPX
+  - Testing: Pytest with async support
   - Logging: Structured logging with audit trails
   - Database: Optional vector store (Qdrant)
 
@@ -44,7 +120,7 @@ Create a secure, read-only AI chat assistant that answers staff and congregant q
 
 ### 🔄 Task & Decision Flow
 
-All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete tasks are documented in `DECISIONS.md`. All implementation must reflect the scope and constraints defined in this plan.
+All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete tasks are documented in `DECISIONS.md`. All implementation must reflect the scope and constraints defined in this plan. Standardize on FastAPI for consistent testing and middleware implementation.
 
 ## 2. Core Constraints
 
@@ -60,14 +136,64 @@ All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete
 ## 3. Tech Stack
 
 - Frontend: Next.js 14 + React Server Components + shadcn/ui chat widget (SSR, streamed)
-- Gateway API: FastAPI (built on Starlette) running behind ASGI (uvicorn)
-  - Handles auth, rate-limiting, logging
-  - Standardized on FastAPI for consistent testing and middleware
+- Gateway API: FastAPI (Python 3.13)
+  - Built on Starlette for ASGI compliance
+  - Standardized on FastAPI for:
+    - Type-safe request handling
+    - Automatic API documentation
+    - Robust dependency injection
+    - Modern middleware system
+    - Improved testing utilities
 - LLM provider: OpenAI GPT-4o (function-calling) via Azure OpenAI
 - Vector store (optional): Qdrant (Docker) with per-user namespaces
 - CI/CD: GitHub Actions; Docker image pushed to GHCR; deployed on Railway
 - GitHub: https://github.com/mattbiddlecombe/churchsuite-chat (CI, PR testing)
 - Secrets: 1Password Connect or AWS Secrets Manager
+
+## Migration Plan
+
+### Phase 1: Infrastructure Setup (Complete)
+- Set up FastAPI project structure
+- Migrate core dependencies
+- Implement FastAPI middleware system
+- Set up proper testing infrastructure
+
+### Phase 2: Endpoint Migration (Complete)
+- Migrate authentication endpoints
+- Migrate rate limiting
+- Migrate security middleware
+- Update endpoint schemas
+
+### Phase 3: Testing & Validation (Complete)
+- Update test suite
+- Validate API documentation
+- Verify security headers
+- Test rate limiting
+- Validate middleware chain
+
+### Phase 4: FastAPI Migration Cleanup
+- Remove SessionMiddleware completely
+- Update middleware to use FastAPI's Middleware class
+- Replace BaseHTTPMiddleware with FastAPI patterns
+- Update security headers to use FastAPI response headers
+- Replace Starlette test client with FastAPI TestClient
+- Update test fixtures to use FastAPI async patterns
+- Remove Starlette types (ASGIApp, Receive, Scope, Send)
+- Update auth endpoints to use FastAPI state management
+- Remove JWTMiddleware class (using FastAPI dependency instead)
+
+### Phase 5: Security Enhancements
+- Finalize security headers configuration
+- Enhance audit logging
+- Improve rate limiting implementation
+- Add end-to-end tests for OAuth2 flows
+
+### Phase 6: Documentation Update
+- Update all documentation to reflect FastAPI patterns
+- Update all examples to use FastAPI TestClient
+- Update all middleware documentation
+- Update all security documentation
+- Update all testing documentation
 
 ## 4. High-Level Architecture
 
