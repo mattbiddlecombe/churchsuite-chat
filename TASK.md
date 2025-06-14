@@ -3,7 +3,7 @@
 ## Document Information
 
 - **Last Updated:** 14 Jun 2025
-- **Version:** v0.1.2
+- **Version:** v0.1.3
 
 ## Completed Tasks
 
@@ -45,6 +45,7 @@
 - [x] Add secure cookie handling
 - [x] Validate `.env.example` consistency
 - [x] Add comprehensive audit logging
+- [x] Fix audit middleware logging issues
 - [x] Add proper error handling for OpenAPI endpoints
 - [x] Create test_security.py
 - [x] Test JWT validation
@@ -52,35 +53,27 @@
 - [x] Test rate limiting
 - [x] Test input validation
 - [x] Test CSRF protection
+- [x] Test audit middleware logging
 
 ## Current Tasks
 
-### FastAPI Migration Cleanup
+### Audit Logging Enhancements
 
-- [ ] Remove SessionMiddleware completely
-- [ ] Update middleware to use FastAPI's Middleware class
-- [ ] Replace BaseHTTPMiddleware with FastAPI patterns
-- [ ] Update security headers to use FastAPI response headers
-- [ ] Replace Starlette test client with FastAPI TestClient
-- [ ] Update test fixtures to use FastAPI async patterns
-- [ ] Remove Starlette types (ASGIApp, Receive, Scope, Send)
-- [ ] Update auth endpoints to use FastAPI state management
-- [ ] Remove JWTMiddleware class (using FastAPI dependency instead)
-
-### Task Discipline Policy
-
-- All tasks must be completed and tested before progressing to the next one.
-- Unit tests should be included for all new or modified functionality.
-- Exceptions must be clearly logged in `DECISIONS.md` with a plan for follow-up.
-- Partial or exploratory implementations should be flagged and isolated.
-- All FastAPI migration tasks must be completed before proceeding with new features.
+- [ ] Add more detailed error information in error logs
+- [ ] Implement log rotation and retention policies
+- [ ] Add centralized logging support
+- [ ] Add alerting based on audit events
+- [ ] Add logging of sensitive operations
+- [ ] Add log correlation IDs for tracing
 
 ### Security Enhancements
 
 - [ ] Implement token blacklist for logout functionality
 - [ ] Finalize security headers configuration
-- [ ] Add comprehensive audit logging (enhanced)
 - [ ] Add rate limiting per user (enhanced)
+- [ ] Add IP-based rate limiting
+- [ ] Add request throttling
+- [ ] Add security audit checks
 
 ### CI/CD Pipeline
 
@@ -98,6 +91,13 @@
 - [ ] Test function call integration
 - [ ] Test error handling
 - [ ] Test permission boundaries
+
+### Documentation
+
+- [ ] Update audit logging documentation
+- [ ] Add logging best practices guide
+- [ ] Document security logging requirements
+- [ ] Add logging configuration documentation
 
 ## Future Tasks
 

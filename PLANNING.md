@@ -22,7 +22,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - FastAPI (Python 3.13) server implemented
   - OpenAI integration with GPT-3.5-turbo complete
   - Basic chat endpoint with function calling operational
-  - Logging infrastructure established
+  - Structured JSON audit logging implemented
   - GitHub repository active at https://github.com/mattbiddlecombe/churchsuite-chat
   - Function calling with OpenAI integrated
   - OAuth2 Client Credentials authentication implemented
@@ -30,6 +30,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - **Resolved:** Middleware implementation issues
   - **Resolved:** Authentication system reimplementation
   - **Resolved:** Test coverage restoration
+  - **Resolved:** Audit logging implementation issues
 
 ### Recent Milestones
 
@@ -58,18 +59,48 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Added rate limiting per user
   - Added proper error handling for OpenAPI endpoints
 
+- **Audit Logging:**
+  - Implemented structured JSON logging with AuditFormatter
+  - Fixed handling of extra fields in logging records
+  - Added comprehensive audit logging for:
+    - Request events (method, path, headers, etc.)
+    - Response events (status code, request_id)
+    - Error events (error_type, error_message, stack trace)
+  - Ensured all custom fields are captured from logging records
+  - Added proper timestamp handling using timezone-aware datetime
+  - All audit log tests passing
+
 ### Next Steps
 
-- **FastAPI Migration Cleanup:**
-  - Remove SessionMiddleware completely
-  - Update middleware to use FastAPI's Middleware class
-  - Replace BaseHTTPMiddleware with FastAPI patterns
-  - Update security headers to use FastAPI response headers
-  - Replace Starlette test client with FastAPI TestClient
-  - Update test fixtures to use FastAPI async patterns
-  - Remove Starlette types (ASGIApp, Receive, Scope, Send)
-  - Update auth endpoints to use FastAPI state management
-  - Remove JWTMiddleware class (using FastAPI dependency instead)
+- **Security Enhancements:**
+  - Finalize security headers configuration
+  - Add more detailed error information in error logs
+  - Implement log rotation and retention policies
+  - Add centralized logging support
+  - Add alerting based on audit events
+  - Improve rate limiting implementation
+  - Add end-to-end tests for OAuth2 flows
+
+- **Middleware Stack:**
+  - Finalize middleware stack configuration
+  - Add proper error handling for OpenAPI endpoints
+  - Add comprehensive logging
+  - Add proper request validation
+  - Add proper response formatting
+
+- **Testing:**
+  - Add end-to-end tests for OAuth2 flows
+  - Add comprehensive test coverage for all middleware
+  - Add proper test cleanup
+  - Add proper test isolation
+  - Add proper test resource management
+
+- **Documentation:**
+  - Update all documentation to reflect FastAPI patterns
+  - Update all examples to use FastAPI TestClient
+  - Update all middleware documentation
+  - Update all security documentation
+  - Update all testing documentation
 
 - **Security Enhancements:**
   - Finalize security headers configuration

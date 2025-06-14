@@ -9,11 +9,6 @@ from datetime import datetime, timedelta
 from backend.security.middleware import InputValidationMiddleware, RateLimitMiddleware
 import uvicorn
 import secrets
-from starlette.middleware.sessions import SessionMiddleware
-
-# Initialize session secret
-SESSION_SECRET = os.getenv("SESSION_SECRET", secrets.token_hex(32))
-
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
@@ -22,14 +17,9 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Configure middleware stack
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=SESSION_SECRET,
-    max_age=3600 * 24,  # 24 hours
-    https_only=True,
-    same_site="strict"
-)
+# Configure FastAPI middleware
+from backend.security.fastapi_middleware import setup_fastapi_middleware
+setup_fastapi_middleware(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,6 +32,8 @@ app.add_middleware(
 )
 
 # Add input validation and rate limiting middleware
+# Add FastAPI middleware
+from backend.security.middleware import InputValidationMiddleware, RateLimitMiddleware
 app.add_middleware(InputValidationMiddleware)
 app.add_middleware(RateLimitMiddleware)
 

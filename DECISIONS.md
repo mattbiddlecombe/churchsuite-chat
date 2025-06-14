@@ -86,6 +86,39 @@ Example format:
   4. Add end-to-end tests for OAuth2 flows
   5. Update all documentation to reflect FastAPI patterns
 
+## 2025-06-14: Audit Middleware Logging Implementation
+
+- **Date:** 2025-06-14
+- **Decision:** Implement structured JSON logging for audit middleware
+- **Justification:**
+  - Need for comprehensive audit logging of security-relevant events
+  - Structured JSON format for better parsing and analysis
+  - Standardized logging format across the application
+  - Better maintainability and debugging capabilities
+
+- **Key Changes:**
+  1. Implemented AuditFormatter to handle structured JSON logs
+  2. Fixed handling of extra fields in logging records
+  3. Added comprehensive audit logging for:
+     - Request events (method, path, headers, etc.)
+     - Response events (status code, request_id)
+     - Error events (error_type, error_message, stack trace)
+  4. Ensured all custom fields are captured from logging records
+  5. Added proper timestamp handling using timezone-aware datetime
+
+- **Benefits:**
+  - Complete audit trail of all security-relevant events
+  - Structured logging format for easy parsing
+  - Better debugging capabilities
+  - Consistent logging across the application
+  - Improved security monitoring
+
+- **Next Steps:**
+  1. Add more detailed error information in error logs
+  2. Implement log rotation and retention policies
+  3. Add centralized logging support
+  4. Add alerting based on audit events
+
 ## 2025-06-14: JWT Authentication Implementation
 
 - **Date:** 2025-06-14

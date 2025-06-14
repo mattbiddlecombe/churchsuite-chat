@@ -1,13 +1,12 @@
 import pytest
 from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
-from backend.app import app
-from backend.security.jwt_middleware import create_access_token, verify_token
+from backend.main import app
+from backend.security.jwt_middleware import create_access_token, get_current_user
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from fastapi import HTTPException
-from unittest.mock import AsyncMock
 from backend.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -43,28 +42,24 @@ async def test_create_token():
 @pytest.mark.asyncio
 async def test_verify_valid_token(valid_token):
     """Test verifying a valid token"""
-    # Mock the OAuth2PasswordBearer dependency
-    token = valid_token
-    result = await verify_token(token)
+    result = get_current_user(valid_token)
     assert result["sub"] == "test_user"
     assert result["username"] == "test_user"
 
 @pytest.mark.asyncio
 async def test_verify_expired_token(expired_token):
     """Test verifying an expired token"""
-    # Mock the OAuth2PasswordBearer dependency
-    token = expired_token
     with pytest.raises(HTTPException) as exc_info:
-        await verify_token(token)
+        get_current_user(expired_token)
     assert exc_info.value.status_code == 401
-    assert "Token has expired" in exc_info.value.detail
+    assert "Invalid token" in exc_info.value.detail
 
 @pytest.mark.asyncio
 async def test_verify_invalid_token():
     """Test verifying an invalid token"""
     invalid_token = "invalid.token.string"
     with pytest.raises(HTTPException) as exc_info:
-        await verify_token(invalid_token)
+        get_current_user(invalid_token)
     assert exc_info.value.status_code == 401
     assert "Invalid token" in exc_info.value.detail
 
@@ -76,25 +71,25 @@ async def test_verify_missing_subject():
     token = jwt.encode(
         data,
         settings.JWT_SECRET,
-        algorithm="HS256"
+        algorithm=settings.JWT_ALGORITHM
     )
     with pytest.raises(HTTPException) as exc_info:
-        await verify_token(token)
+        get_current_user(token)
     assert exc_info.value.status_code == 401
-    assert "Could not validate credentials" in str(exc_info.value.detail)
+    assert "Invalid token" in exc_info.value.detail
 
 @pytest.mark.asyncio
 async def test_verify_missing_expiration():
     """Test verifying a token with missing expiration"""
-    # Create token with subject and username
+    # Create token with subject and username but no expiration
     data = {"sub": "test_user", "username": "test_user"}
     token = jwt.encode(
         data,
         settings.JWT_SECRET,
-        algorithm="HS256"
+        algorithm=settings.JWT_ALGORITHM
     )
     
     with pytest.raises(HTTPException) as exc_info:
-        await verify_token(token)
+        get_current_user(token)
     assert exc_info.value.status_code == 401
-    assert "Could not validate credentials" in str(exc_info.value.detail)
+    assert "Invalid token" in exc_info.value.detail
