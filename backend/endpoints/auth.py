@@ -1,25 +1,31 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
-from starlette.responses import JSONResponse, RedirectResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
-from backend.security.jwt_middleware_native import JWTMiddleware
+from fastapi import APIRouter, Request, Response, HTTPException, Depends, status, Query
+from fastapi.responses import RedirectResponse
 from backend.security.csrf import generate_csrf_token
-from backend.security.rate_limiter import RateLimiterMiddleware
+from backend.security.jwt_middleware_native import verify_token
+from backend.security.redis_dependency import RedisDependency
 from typing import Optional
 import secrets
-import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-router = APIRouter()
+# Create auth router
+router = APIRouter(
+    tags=["auth"]
+)
 
-async def auth_start(scope: Scope, receive: Receive, send: Send):
+__all__ = ["router"]
+
+@router.get("/start")
+async def auth_start(request: Request, redis_dependency: RedisDependency = Depends()):
     """Start the authentication process"""
-    request = Request(scope, receive)
-    
     # Generate CSRF token
     csrf_token = generate_csrf_token()
     
+    # Store state in Redis with expiration
+    redis_key = f"auth_state:{csrf_token}"
+    await redis_dependency._redis.setex(redis_key, 3600, csrf_token)  # Store the token itself
+    
     # Set CSRF token in response
-    response = RedirectResponse(url="https://churchsuite.com/auth")
+    response = Response(status_code=200)
     response.set_cookie(
         key="csrf_token",
         value=csrf_token,
@@ -28,85 +34,174 @@ async def auth_start(scope: Scope, receive: Receive, send: Send):
         samesite="lax"
     )
     
-    await response(scope, receive, send)
+    # Include state parameter in callback URL
+    callback_url = f"/api/v1/auth/callback?state={csrf_token}"
+    response.headers["Location"] = callback_url
+    
+    return response
 
-async def auth_callback(scope: Scope, receive: Receive, send: Send):
+@router.get("/callback")
+async def auth_callback(
+    request: Request,
+    state: str = Query(..., description="OAuth2 state parameter"),
+    redis_dependency: RedisDependency = Depends()
+):
     """Handle authentication callback"""
-    request = Request(scope, receive)
+    try:
+        print(f"Auth callback received state: {state}")
+        
+        # Verify state in Redis
+        redis_key = f"auth_state:{state}"
+        exists = await redis_dependency._redis.exists(redis_key)
+        if not exists:
+            print(f"Redis key {redis_key} not found")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid state parameter"
+            )
+            
+        # Generate tokens
+        access_token = secrets.token_urlsafe(32)
+        refresh_token = secrets.token_urlsafe(32)
+        print(f"Generating tokens: access={access_token[:5]}... refresh={refresh_token[:5]}...")
+        
+        # Set tokens in response
+        response = Response(status_code=200)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            expires=datetime.now(timezone.utc) + timedelta(hours=1)
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            expires=datetime.now(timezone.utc) + timedelta(days=7)
+        )
+        
+        # Clean up state
+        await redis_dependency._redis.delete(redis_key)
+        return response
+            
+        redis_key = f"auth_state:{state}"
+        exists = await redis_dependency._redis.exists(redis_key)
+        if not exists:
+            print(f"Redis key {redis_key} not found")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid state parameter"
+            )
+            
+        # Generate tokens
+        access_token = secrets.token_urlsafe(32)
+        refresh_token = secrets.token_urlsafe(32)
+        print(f"Generating tokens: access={access_token[:5]}... refresh={refresh_token[:5]}...")
+        
+        # Set tokens in response
+        response = Response(status_code=200)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            expires=datetime.now(timezone.utc) + timedelta(hours=1)
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            expires=datetime.now(timezone.utc) + timedelta(days=7)
+        )
+        
+        # Clean up state
+        await redis_dependency._redis.delete(redis_key)
+        return response
+        
+    except HTTPException as e:
+        # Re-raise any HTTP exceptions we want to handle
+        raise e
+    except Exception as e:
+        # Log and return a generic error for other exceptions
+        print(f"Error in auth callback: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
     
-    # Validate CSRF token
-    csrf_token = request.cookies.get("csrf_token")
-    if not csrf_token or csrf_token != request.query_params.get("state"):
-        await send({
-            "type": "http.response.start",
-            "status": 403,
-            "headers": [
-                [b"content-type", b"application/json"],
-            ],
-        })
-        await send({
-            "type": "http.response.body",
-            "body": b'{"detail": "CSRF validation failed"}',
-        })
-        return
+    # Verify state in Redis
+    redis_key = f"auth_state:{state}"
+    exists = await redis_dependency._redis.exists(redis_key)
+    print(f"Checking Redis key: {redis_key}")
+    print(f"Redis key exists: {exists}")
     
-    # Exchange code for token
-    # In production, this would make a request to ChurchSuite's API
+    if not exists:
+        print("Invalid state parameter")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid state parameter"
+        )
+    
+    # Generate tokens
     access_token = secrets.token_urlsafe(32)
     refresh_token = secrets.token_urlsafe(32)
+    print(f"Generating tokens: access={access_token[:5]}... refresh={refresh_token[:5]}...")
     
-    # Set tokens in response
-    response = RedirectResponse(url="/chat")
+    # Set tokens as cookies
+    response = Response(status_code=200)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=True,
         samesite="lax",
-        expires=datetime.utcnow() + timedelta(hours=1)
+        expires=datetime.now(timezone.utc) + timedelta(hours=1)
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="lax"
+        samesite="lax",
+        expires=datetime.now(timezone.utc) + timedelta(days=7)
     )
     
-    await response(scope, receive, send)
+    # Remove the state from Redis since it's been used
+    await redis_dependency._redis.delete(redis_key)
+    
+    return response
 
-async def refresh_token(scope: Scope, receive: Receive, send: Send):
+@router.get("/refresh")
+async def refresh_token(request: Request, current_user=Depends(verify_token)):
     """Refresh access token"""
-    request = Request(scope, receive)
+    # Generate new tokens
+    access_token = secrets.token_urlsafe(32)
+    refresh_token = secrets.token_urlsafe(32)
     
-    # Get refresh token from cookie
-    refresh_token = request.cookies.get("refresh_token")
-    if not refresh_token:
-        await send({
-            "type": "http.response.start",
-            "status": 401,
-            "headers": [
-                [b"content-type", b"application/json"],
-            ],
-        })
-        await send({
-            "type": "http.response.body",
-            "body": b'{"detail": "Refresh token required"}',
-        })
-        return
-    
-    # In production, this would make a request to ChurchSuite's API
-    new_access_token = secrets.token_urlsafe(32)
-    
-    # Set new access_token in response
-    response = RedirectResponse(url="/chat")
+    # Set tokens as cookies
+    response = Response(status_code=200)
     response.set_cookie(
         key="access_token",
-        value=new_access_token,
+        value=access_token,
         httponly=True,
         secure=True,
         samesite="lax",
-        expires=datetime.utcnow() + timedelta(hours=1)
+        expires=datetime.now(timezone.utc) + timedelta(hours=1)
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        expires=datetime.now(timezone.utc) + timedelta(days=7)
     )
     
-    await response(scope, receive, send)
+    return response

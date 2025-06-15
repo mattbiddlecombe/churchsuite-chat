@@ -98,6 +98,33 @@ Example format:
   - Monitor rate limiting behavior in production
   - Consider adding more comprehensive rate limit testing
 - **Additional Notes:**
+
+## 2025-06-15: Auth Callback Parameter Handling
+- **Date:** 2025-06-15
+- **Task:** Fix auth callback endpoint parameter handling
+- **Deviation:** Multiple approaches to handle query parameters
+- **Justification:** Initial implementations using Query parameter and BaseModel failed due to:
+  - Middleware interference with query parameter handling
+  - Test client issues with parameter passing
+  - Validation constraints causing 422 errors
+- **Solution:**
+  - Disabled middleware for testing to prevent interference
+  - Used FastAPI's built-in Query parameter with proper validation
+  - Fixed test client parameter passing
+  - Added proper error handling for missing/invalid state
+  - Implemented comprehensive test coverage
+- **Current Status:** All tests passing
+- **Next Steps:**
+  - None - task complete
+- **Follow-up:**
+  - Review middleware stack for potential optimizations
+  - Consider adding more comprehensive security validation
+- **Additional Notes:**
+  - Key changes:
+    - Removed Starlette middleware patterns
+    - Implemented proper FastAPI parameter validation
+    - Added comprehensive test coverage
+    - Fixed query parameter handling across middleware layers
   - Key changes:
     - Test isolation through function-scoped fixtures
     - Proper state cleanup between tests

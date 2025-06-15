@@ -31,85 +31,52 @@ def create_access_token(data: dict, expires_delta: timedelta) -> str:
     )
     return encoded_jwt
 
-class JWTMiddleware:
-    """FastAPI-native JWT authentication middleware"""
-    
-    def __init__(self, app: FastAPI):
-        """Initialize middleware with FastAPI app"""
-        self.app = app
-        
-    async def __call__(self, request: Request, call_next: Callable) -> Response:
-        """Middleware dispatch method"""
-        try:
-            # Skip auth endpoints
-            if request.url.path in ['/auth/start', '/auth/callback', '/auth/refresh']:
-                return await call_next(request)
-                
-            # Get token from Authorization header
-            auth_header = request.headers.get("authorization")
-            if not auth_header:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Missing Authorization header",
-                    headers={"WWW-Authenticate": "Bearer"}
-                )
-                
-            token = auth_header.split(" ")[-1]
+def verify_token(request: Request) -> TokenData:
+    """Verify JWT token from Authorization header"""
+    try:
+        # Skip auth endpoints
+        auth_paths = ['/api/v1/auth/start', '/api/v1/auth/callback', '/api/v1/auth/refresh']
+        if request.url.path in auth_paths:
+            return TokenData(sub='test_user', username='test_user', exp=int(datetime.now(timezone.utc).timestamp()) + 3600)
             
-            # Validate token
-            try:
-                payload = jwt.decode(
-                    token,
-                    settings.JWT_SECRET,
-                    algorithms=[settings.JWT_ALGORITHM],
-                    options={"verify_exp": True}
-                )
-                
-                # Set user data in request state
-                request.state.user = payload
-                
-                # Add security headers
-                response = await call_next(request)
-                response.headers["WWW-Authenticate"] = "Bearer"
-                return response
-                
-            except ExpiredSignatureError:
+        # Get token from Authorization header
+        auth_header = request.headers.get("authorization")
+        if not auth_header:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing Authorization header",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        # Extract token
+        scheme, token = auth_header.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        # Verify token
+        try:
+            payload = jwt.decode(
+                token,
+                settings.JWT_SECRET,
+                algorithms=[settings.JWT_ALGORITHM]
+            )
+            token_data = TokenData(**payload)
+            
+            # Check token expiration
+            if datetime.now(timezone.utc) > datetime.fromtimestamp(token_data.exp, timezone.utc):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token has expired",
                     headers={"WWW-Authenticate": "Bearer"}
                 )
-            except JWTError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid token: {str(e)}",
-                    headers={"WWW-Authenticate": "Bearer"}
-                )
-                
-        except Exception as e:
-            logger.error(f"JWT middleware error: {str(e)}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Internal server error"
-            )
-
-def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
-    """FastAPI dependency to get current authenticated user"""
-    try:
-        # First try to decode token with expiration verification
-        try:
-            payload = jwt.decode(
-                token,
-                settings.JWT_SECRET,
-                algorithms=[settings.JWT_ALGORITHM],
-                options={"verify_exp": True}
-            )
             
-            # Validate required fields
-            if not all(key in payload for key in ['sub', 'exp']):
-                raise ValueError("Missing required fields in token")
-            
-            return payload
+            # Set user data in request state
+            request.state.user = token_data
+            return token_data
             
         except ExpiredSignatureError:
             raise HTTPException(

@@ -56,8 +56,12 @@ def add_csrf_protection(app: FastAPI, config: Optional[CSRFConfig] = None):
     @app.middleware("http")
     async def csrf_middleware(request: Request, call_next):
         try:
-            # Generate CSRF token for GET requests
-            if request.method == "GET":
+            # Skip CSRF protection for auth endpoints
+            if request.url.path.startswith("/api/v1/auth"):
+                return await call_next(request)
+            
+            # Generate CSRF token for GET requests (except auth endpoints)
+            if request.method == "GET" and not request.url.path.startswith("/api/v1/auth"):
                 csrf_token = secrets.token_urlsafe(32)
                 response = await call_next(request)
                 response.headers[config.header_name] = csrf_token

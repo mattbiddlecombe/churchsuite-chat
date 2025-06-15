@@ -22,7 +22,7 @@ def get_churchsuite_client():
         base_url=settings.CHURCHSUITE_BASE_URL
     )
 
-@router.get("/start")
+@router.get("/cs/start")
 async def auth_start(request: Request):
     """Start the OAuth2 flow by redirecting to ChurchSuite login"""
     try:
@@ -40,7 +40,7 @@ async def auth_start(request: Request):
         logger.error(f"Auth start error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/callback")
+@router.get("/cs/callback")
 async def auth_callback(request: Request):
     """Handle the OAuth2 callback from ChurchSuite"""
     try:
@@ -64,7 +64,7 @@ async def auth_callback(request: Request):
         logger.error(f"Auth callback error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/refresh")
+@router.get("/cs/refresh")
 async def refresh_token(request: Request):
     """Refresh the OAuth2 access token"""
     try:

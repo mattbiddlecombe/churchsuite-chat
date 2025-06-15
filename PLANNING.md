@@ -26,15 +26,12 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - GitHub repository active at https://github.com/mattbiddlecombe/churchsuite-chat
   - Function calling with OpenAI integrated
   - OAuth2 Client Credentials authentication implemented
-  - **Resolved:** Schema structure split issues
   - **Resolved:** Middleware implementation issues
     - Using FastAPI's native @app.middleware("http") pattern
     - Removed Starlette BaseHTTPMiddleware
     - Implemented proper async/await patterns
   - **Resolved:** Authentication system reimplementation
   - **Resolved:** Test coverage restoration
-  - **Resolved:** Audit logging implementation issues
-  - **Resolved:** Rate limit middleware implementation issues
   - **Resolved:** Security middleware migration
     - Migrated from Starlette to FastAPI-native middleware
     - Implemented proper security headers
@@ -43,14 +40,11 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
     - Added comprehensive test coverage
   - **Completed:** ### 2025-06-16: Middleware Migration
 
-- Migrate legacy middleware to FastAPI-native patterns
+- Migrated legacy middleware to FastAPI-native patterns
   - Completed: JWT middleware migration to `jwt_middleware_native.py`
   - Completed: Rate limiter migration to FastAPI-native pattern
-  - Remaining files to migrate:
-    - `input_sanitizer.py`
-    - `request_validator.py`
-    - `cookie_handler.py`
-    - Target: Complete migration to FastAPI-native patterns by 2025-06-16
+  - Completed: Input sanitizer migration to FastAPI middleware
+  - Completed: Request validator migration to FastAPI middleware
   - Key improvements:
     - Removed Starlette BaseHTTPMiddleware
     - Implemented proper FastAPI Middleware class
@@ -73,6 +67,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
     - Token expiration handling
     - Missing claims validation (subject and expiration)
     - Invalid token handling
+    - OAuth2 state parameter validation
   - Fixed JWT token manipulation in tests to use correct secret key
   - Implemented proper error handling with consistent error messages
   - Added secure cookie handling for JWT tokens
@@ -89,6 +84,8 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Added comprehensive audit logging
   - Added rate limiting per user
   - Added proper error handling for OpenAPI endpoints
+  - Fixed query parameter handling in auth callback endpoint
+  - Implemented proper middleware stack for security
 
 - **Audit Logging:**
   - Implemented structured JSON logging with AuditFormatter

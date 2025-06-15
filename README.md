@@ -40,6 +40,22 @@ The application includes a robust input sanitizer middleware that:
    3. X-XSS-Protection: 1; mode=block
    4. Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'
 
+### Authentication & Authorization
+
+The application implements a secure authentication system that:
+
+1. Uses OAuth2 Authorization Code flow with ChurchSuite
+2. Implements CSRF protection with state parameter validation
+3. Uses JWT tokens for session management
+4. Stores session state securely in Redis
+5. Implements token blacklist for logout functionality
+6. Adds proper error handling for invalid tokens
+7. Uses secure cookie handling with proper attributes:
+   - HttpOnly: true
+   - Secure: true
+   - SameSite: lax
+   - Proper expiration handling
+
 ### Error Handling
 
 The middleware provides consistent error messages for different types of validation failures:
