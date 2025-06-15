@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from backend.app import app
+from backend.main import app
 from backend.routers.churchsuite import auth_states
 from backend.config import settings
 from datetime import datetime, timedelta

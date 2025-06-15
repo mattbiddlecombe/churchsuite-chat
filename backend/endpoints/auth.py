@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
-from backend.security.jwt_middleware import JWTMiddleware
+from backend.security.jwt_middleware_native import JWTMiddleware
 from backend.security.csrf import generate_csrf_token
 from backend.security.rate_limiter import RateLimiterMiddleware
 from typing import Optional

@@ -1,7 +1,7 @@
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from backend.security.middleware.input_validation import input_validation_middleware
+from backend.security.input_sanitizer import InputSanitizerMiddleware as InputSanitizerM
 from backend.security.dependencies import validate_request, ENDPOINT_SCHEMAS
 from backend.schemas.requests import ChatRequest, AuthRequest
 from backend.config import settings
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def app_with_validation():
     """Create a FastAPI app with input validation middleware."""
     app = FastAPI()
-    input_validation_middleware(app)
+    app.add_middleware(InputSanitizerMiddleware)
     
     @app.post("/chat")
     async def chat_endpoint(request: Request):

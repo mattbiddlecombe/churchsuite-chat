@@ -9,9 +9,9 @@
                 "args": [
                     "-y",
                     "@upstash/context7-mcp"
-                ]
-            },
-            "vault"
+                ],
+                "default": true
+            }
         ],
         "files": [
             "README.md",

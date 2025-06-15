@@ -3,12 +3,19 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
-from backend.security.jwt_middleware import create_access_token, verify_token, get_current_user
+from backend.security.jwt_middleware_native import create_access_token, get_current_user, JWTMiddleware
+from backend.security.security_headers import add_security_headers
+from backend.security.csrf import add_csrf_protection
 from backend.schemas.auth import Token, TokenData
 from backend.config import settings
 
 router = APIRouter()
 
+# Add security middleware
+add_security_headers(router)
+add_csrf_protection(router)
+
+# Use OAuth2PasswordBearer for token extraction
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.post("/token", response_model=Token)

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from backend.main import app
-from backend.security.jwt_middleware import create_access_token, get_current_user
+from backend.security.jwt_middleware_native import create_access_token, get_current_user, JWTMiddleware
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
@@ -11,10 +11,34 @@ from backend.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-@pytest.fixture
-def test_app():
-    """Test app fixture"""
-    return TestClient(app)
+@pytest.fixture(scope="function")
+async def test_app():
+    """Test app fixture with FastAPI TestClient"""
+    from fastapi import FastAPI
+    from backend.main import create_app
+    
+    # Create a new app instance for testing
+    app = create_app()
+    test_app = TestClient(app)
+    
+    # Add a test endpoint for authentication
+    @app.get("/me")
+    async def test_me(current_user: Dict[str, Any] = Depends(get_current_user)):
+        return current_user
+    
+    try:
+        yield test_app
+    finally:
+        # Cleanup
+        test_app.app.user_state = {}  # Clear user state
+        test_app.app._state = {}  # Clear app state
+        test_app.app._middleware = []  # Reset middleware stack
+        
+        # Remove the test endpoint
+        app.routes = []
+        
+        # Close the test client
+        await test_app.close()
 
 @pytest.fixture
 def valid_token():
@@ -38,13 +62,27 @@ async def test_create_token():
     token = create_access_token(data, expires_delta)
     assert isinstance(token, str)
     assert len(token) > 0
+    
+    # Verify token can be decoded
+    payload = jwt.decode(
+        token,
+        settings.JWT_SECRET,
+        algorithms=[settings.JWT_ALGORITHM]
+    )
+    assert payload["sub"] == "test_user"
+    assert payload["username"] == "test_user"
 
 @pytest.mark.asyncio
-async def test_verify_valid_token(valid_token):
-    """Test verifying a valid token"""
-    result = get_current_user(valid_token)
-    assert result["sub"] == "test_user"
-    assert result["username"] == "test_user"
+async def test_verify_valid_token(valid_token, test_app):
+    """Test verifying a valid token with FastAPI TestClient"""
+    # Create a test request with the token
+    headers = {"Authorization": f"Bearer {valid_token}"}
+    
+    # Use the test client directly
+    response = test_app.get("/me", headers=headers)
+    
+    assert response.status_code == 200
+    assert response.json() == {"sub": "test_user", "username": "test_user"}
 
 @pytest.mark.asyncio
 async def test_verify_expired_token(expired_token):
@@ -52,7 +90,7 @@ async def test_verify_expired_token(expired_token):
     with pytest.raises(HTTPException) as exc_info:
         get_current_user(expired_token)
     assert exc_info.value.status_code == 401
-    assert "Invalid token" in exc_info.value.detail
+    assert "Token has expired" in exc_info.value.detail
 
 @pytest.mark.asyncio
 async def test_verify_invalid_token():
@@ -76,7 +114,7 @@ async def test_verify_missing_subject():
     with pytest.raises(HTTPException) as exc_info:
         get_current_user(token)
     assert exc_info.value.status_code == 401
-    assert "Invalid token" in exc_info.value.detail
+    assert "Missing required fields in token" in exc_info.value.detail
 
 @pytest.mark.asyncio
 async def test_verify_missing_expiration():
@@ -92,4 +130,4 @@ async def test_verify_missing_expiration():
     with pytest.raises(HTTPException) as exc_info:
         get_current_user(token)
     assert exc_info.value.status_code == 401
-    assert "Invalid token" in exc_info.value.detail
+    assert "Missing required fields in token" in exc_info.value.detail

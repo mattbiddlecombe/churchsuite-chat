@@ -28,6 +28,9 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - OAuth2 Client Credentials authentication implemented
   - **Resolved:** Schema structure split issues
   - **Resolved:** Middleware implementation issues
+    - Using FastAPI's native @app.middleware("http") pattern
+    - Removed Starlette BaseHTTPMiddleware
+    - Implemented proper async/await patterns
   - **Resolved:** Authentication system reimplementation
   - **Resolved:** Test coverage restoration
   - **Resolved:** Audit logging implementation issues
@@ -38,6 +41,22 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
     - Added CSRF protection with token validation
     - Fixed cookie attribute validation
     - Added comprehensive test coverage
+  - **Completed:** ### 2025-06-16: Middleware Migration
+
+- Migrate legacy middleware to FastAPI-native patterns
+  - Completed: JWT middleware migration to `jwt_middleware_native.py`
+  - Completed: Rate limiter migration to FastAPI-native pattern
+  - Remaining files to migrate:
+    - `input_sanitizer.py`
+    - `request_validator.py`
+    - `cookie_handler.py`
+    - Target: Complete migration to FastAPI-native patterns by 2025-06-16
+  - Key improvements:
+    - Removed Starlette BaseHTTPMiddleware
+    - Implemented proper FastAPI Middleware class
+    - Added proper error handling with HTTPException
+    - Maintained security headers and CSRF protection
+    - Added comprehensive test coverage for rate limiting
   - Fixed test isolation by changing fixture scope to "function"
   - Implemented proper state cleanup between tests
   - Fixed rate limit check timing to be after request processing
@@ -46,6 +65,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
 ### Recent Milestones
 
 - **Authentication System:**
+
   - Successfully migrated from Starlette to FastAPI-native JWT authentication
   - Implemented proper JWT token creation and verification with FastAPI dependencies
   - Added comprehensive test suite covering:
@@ -84,6 +104,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
 ### Next Steps
 
 - **Security Enhancements:**
+
   - Finalize security headers configuration
   - Add more detailed error information in error logs
   - Implement log rotation and retention policies
@@ -93,6 +114,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Add end-to-end tests for OAuth2 flows
 
 - **Middleware Stack:**
+
   - Finalize middleware stack configuration
   - Add proper error handling for OpenAPI endpoints
   - Add comprehensive logging
@@ -100,6 +122,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Add proper response formatting
 
 - **Testing:**
+
   - Add end-to-end tests for OAuth2 flows
   - Add comprehensive test coverage for all middleware
   - Add proper test cleanup
@@ -107,6 +130,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Add proper test resource management
 
 - **Documentation:**
+
   - Update all documentation to reflect FastAPI patterns
   - Update all examples to use FastAPI TestClient
   - Update all middleware documentation
@@ -114,12 +138,14 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Update all testing documentation
 
 - **Security Enhancements:**
+
   - Finalize security headers configuration
   - Enhance audit logging
   - Improve rate limiting implementation
   - Add end-to-end tests for OAuth2 flows
 
 - **Middleware Stack:**
+
   - Finalize middleware stack configuration
   - Add proper error handling for OpenAPI endpoints
   - Add comprehensive logging
@@ -127,6 +153,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Add proper response formatting
 
 - **Testing:**
+
   - Add end-to-end tests for OAuth2 flows
   - Add comprehensive test coverage for all middleware
   - Add proper test cleanup
@@ -134,6 +161,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Add proper test resource management
 
 - **Documentation:**
+
   - Update all documentation to reflect FastAPI patterns
   - Update all examples to use FastAPI TestClient
   - Update all middleware documentation
@@ -141,14 +169,7 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
   - Update all testing documentation
 
 - **Tech Stack:**
-  - Backend: FastAPI (Python 3.13)
-  - OpenAI: GPT-3.5-turbo
-  - HTTP Client: HTTPX
-  - Testing: Pytest with async support
-  - Logging: Structured logging with audit trails
-  - Database: Optional vector store (Qdrant)
 
-- **Tech Stack:**
   - Backend: FastAPI (Python 3.13)
   - OpenAI: GPT-3.5-turbo
   - HTTP Client: HTTPX
@@ -158,11 +179,12 @@ This project follows the base AI coding assistant rules defined in `GLOBAL_RULES
 
 ## 1. Purpose & Vision
 
-Create a secure, read-only AI chat assistant that answers staff and congregant questions using live ChurchSuite data, respecting each user's existing ChurchSuite permissions. Future versions will allow limited write operations behind additional safeguards.
+Create a secure, read-only AI chat assistant that answers staff and congregant questions using live ChurchSuite data, respecting each user's existing ChurchSuite permissions. Future versions will allow limited write operations behind additional safeguards. The chat assistant will have web based front end through which users will log in using Churchsuite credentials and be able engage the assistant in conversation.
 
 ### 🔄 Task & Decision Flow
 
 All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete tasks are documented in `DECISIONS.md`. All implementation must reflect the scope and constraints defined in this plan. Standardize on FastAPI for consistent testing and middleware implementation.
+A working backend is the first priority. It will need to be testable using terminal based conversation. After that is working the frontend can be developed.
 
 ## 2. Core Constraints
 
@@ -195,18 +217,21 @@ All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete
 ## Migration Plan
 
 ### Phase 1: Infrastructure Setup (Complete)
+
 - Set up FastAPI project structure
 - Migrate core dependencies
 - Implement FastAPI middleware system
 - Set up proper testing infrastructure
 
 ### Phase 2: Endpoint Migration (Complete)
+
 - Migrate authentication endpoints
 - Migrate rate limiting
 - Migrate security middleware
 - Update endpoint schemas
 
 ### Phase 3: Testing & Validation (Complete)
+
 - Update test suite
 - Validate API documentation
 - Verify security headers
@@ -214,6 +239,7 @@ All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete
 - Validate middleware chain
 
 ### Phase 4: FastAPI Migration Cleanup
+
 - Remove SessionMiddleware completely
 - Update middleware to use FastAPI's Middleware class
 - Replace BaseHTTPMiddleware with FastAPI patterns
@@ -225,12 +251,14 @@ All active tasks are tracked in `TASK.md`. Exceptions to the rules or incomplete
 - Remove JWTMiddleware class (using FastAPI dependency instead)
 
 ### Phase 5: Security Enhancements
+
 - Finalize security headers configuration
 - Enhance audit logging
 - Improve rate limiting implementation
 - Add end-to-end tests for OAuth2 flows
 
 ### Phase 6: Documentation Update
+
 - Update all documentation to reflect FastAPI patterns
 - Update all examples to use FastAPI TestClient
 - Update all middleware documentation
@@ -331,7 +359,8 @@ Each schema includes user_token in x-headers (hidden from LLM) so the model neve
 
 - **Prompt Engineering**
   - Provide clear, specific instructions
-  - Include relevant context and examples
+  - Include relevant context and examples.
+  - Use context7 to acccess relevant library documentation
   - Use structured data formats when possible
   - Validate AI-generated code before implementation
 

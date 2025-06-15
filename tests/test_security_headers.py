@@ -1,12 +1,12 @@
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from backend.security.fastapi_middleware import setup_fastapi_middleware
+from backend.security.security_headers import add_security_headers
 
 @pytest.fixture
 def app_with_security_headers():
     app = FastAPI()
-    setup_fastapi_middleware(app)
+    add_security_headers(app)
     return app
 
 @pytest.fixture

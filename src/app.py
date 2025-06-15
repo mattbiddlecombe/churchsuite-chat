@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from src.middleware.jwt_middleware import JWTMiddleware
-from src.middleware.jwt_middleware import JWTSettings
+from backend.security.jwt_middleware_native import JWTMiddleware
+from backend.config import settings as JWTSettings
 from src.endpoints.auth import router as auth_router
 
 app = FastAPI(

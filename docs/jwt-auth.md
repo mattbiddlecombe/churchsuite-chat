@@ -7,7 +7,7 @@ The ChurchSuite Chatbot implements secure JWT-based authentication using FastAPI
 ## Key Components
 
 ### JWT Middleware
-Located in `backend/security/jwt_middleware.py`, this module provides:
+Located in `backend/security/jwt_middleware_native.py`, this module provides a FastAPI-native JWT authentication implementation that includes:
 
 - Token creation with proper expiration handling
 - Token verification with error handling

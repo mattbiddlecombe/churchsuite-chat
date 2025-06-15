@@ -5,7 +5,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # API Configuration
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "ChurchSuite Chatbot"
+    APP_NAME: str = "ChurchSuite Chatbot"
     VERSION: str = "1.0.0"
     
     # Security Configuration

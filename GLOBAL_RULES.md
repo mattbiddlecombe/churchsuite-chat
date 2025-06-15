@@ -35,6 +35,7 @@ These rules define the behaviour, structure, and standards expected in this proj
   - If a task isn’t listed, add it with a description and today’s date.
 - Use consistent naming, folder structures, and conventions as described in `PLANNING.md` and streamed context.
 - Honour context streamed from `vault`, `README.md`, or `mcp_context.md`.
+- Use context7 consistently to check relevant documentation
 
 ---
 
@@ -65,6 +66,7 @@ These rules define the behaviour, structure, and standards expected in this proj
 
 - When a test fails, the assistant must:
 
+  - check context7 for relevant documentation
   - Explain **why** it failed, referencing expected vs actual results.
   - Suggest specific fixes or debug steps.
   - Indicate whether the failure represents progress (e.g. resolving earlier errors, changing behaviour).

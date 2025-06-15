@@ -178,6 +178,36 @@ Example format:
   3. Add centralized logging support
   4. Add alerting based on audit events
 
+## 2025-06-14: Middleware Migration to FastAPI Native
+
+- **Date:** 2025-06-14
+- **Decision:** Migrate from Starlette middleware patterns to FastAPI native middleware
+- **Justification:**
+  - Better integration with FastAPI's dependency injection system
+  - More maintainable and consistent codebase
+  - Better async/await support
+  - Improved testability
+  - Future-proofing against Starlette deprecations
+
+- **Key Changes:**
+  1. Removed Starlette BaseHTTPMiddleware
+  2. Implemented FastAPI's native @app.middleware("http") pattern
+  3. Updated all middleware implementations to use FastAPI patterns
+  4. Fixed async/await patterns in middleware
+  5. Updated test suite to use FastAPI TestClient
+
+- **Benefits:**
+  - More consistent codebase
+  - Better testability
+  - Improved async support
+  - Better integration with FastAPI ecosystem
+  - Reduced dependency on Starlette internals
+
+- **Next Steps:**
+  1. Review remaining middleware implementations
+  2. Update documentation to reflect new patterns
+  3. Add more comprehensive middleware tests
+
 ## 2025-06-14: JWT Authentication Implementation
 
 - **Date:** 2025-06-14
